@@ -1,0 +1,209 @@
+%Create the MATLAB path
+addpath('C:\Users\Lenovo\Desktop\DSP Folder\Assignment Audio DSP\Samples');
+
+% Specify the audio file
+% Make sure this file is in your MATLAB path or provide the full path
+filename = 'C:\Users\Lenovo\Desktop\DSP Folder\Assignment Audio DSP\Samples\audio09.wav'; 
+
+%% Read and display the signal of original signal
+% Read the audio file (audiodata represents the signal plot)
+%fs = sampleRate
+[audioData, sampleRate] = audioread(filename);
+
+%Play the audio file
+sound(audioData, sampleRate);
+
+% Display the audio information
+disp('Audio Data:');
+disp(audioData);
+disp('Sample Rate:');
+disp(sampleRate);
+
+%% Plot the original signal graph
+% Get the duration of the audio signal in seconds
+duration = length(audioData) / sampleRate; 
+
+% Create a time vector
+t = linspace(0, duration, length(audioData));
+
+% Plot the original audio signal
+figure;
+plot(t, audioData);
+xlabel('Time (seconds)');
+ylabel('Amplitude');
+title('Waveform of audio9.wav');
+grid on;
+
+%Display the value of length(audioData)
+disp(length(audioData))
+
+%% Plot frequency spectrum of the graph
+% Compute the FFT of the audio signal
+Y = fft(audioData);
+
+% Normalize the FFT output
+Y = Y / length(audioData);
+
+% Get the magnitude of the FFT
+Y_magnitude = abs(audioData);
+
+% Only keep the first half of the FFT output (positive frequencies)
+Y_magnitude = Y_magnitude(1:floor(length(Y_magnitude)/2));
+
+% Create a frequency vector
+f = linspace(0, sampleRate/2, length(Y_magnitude));
+
+% Plot the frequency spectrum
+figure;
+plot(f, Y_magnitude);
+xlabel('Frequency (Hz)');
+ylabel('Magnitude');
+title('Frequency Spectrum of audio9.wav');
+grid on;
+
+%% FIR Filter Design and Application
+% Filter parameters
+N = 50; % Filter order
+Fc = 0.4; % Cutoff frequency (normalized, 0 to 1, where 1 is the Nyquist frequency)
+b_fir = fir1(N, Fc, hamming(N+1)); % FIR filter coefficients using Hamming window
+
+% Plot the frequency response of the FIR filter using freqz
+% 1 is the denominator coefficient, 1024 represents 1024 points used
+figure;
+freqz(b_fir, 1, 1024, sampleRate);
+title('Frequency Response of FIR Filter');
+
+% Apply FIR filter to the audio signal
+audioData_fir = filter(b_fir, 1, audioData);
+
+% Plot the filtered audio signal (FIR)
+figure;
+plot(t, audioData_fir);
+xlabel('Time (seconds)');
+ylabel('Amplitude');
+title('Waveform of FIR Filtered audio09.wav');
+grid on;
+
+% Compute the FFT of the FIR filtered audio signal
+Y_fir = fft(audioData_fir);
+
+% Normalize the FFT output
+Y_fir = Y_fir / length(audioData_fir);
+
+% Get the magnitude of the FFT
+Y_fir_magnitude = abs(Y_fir);
+
+% Use fftshift to center the FFT spectrum
+Y_fir_magnitude_shifted = fftshift(Y_fir_magnitude);
+
+% Create a frequency vector
+f = linspace(-sampleRate/2, sampleRate/2, length(Y_fir_magnitude));
+
+% Plot the frequency spectrum of the FIR filtered audio signal
+figure;
+plot(f, Y_fir_magnitude_shifted);
+xlabel('Frequency (Hz)');
+ylabel('Magnitude');
+title('Frequency Spectrum of FIR Filtered audio09.wav (Shifted)');
+grid on;
+
+%% IIR Filter Design and Application
+% Parameters for IIR filter
+% Filter parameters
+N = 20; % Filter order
+Fc = 0.4; % Cutoff frequency (normalized, 0 to 1, where 1 is the Nyquist frequency)
+
+% Design IIR Butterworth filter
+[b_iir, a_iir] = butter(N, Fc);
+
+% Plot the frequency response of the IIR filter using freqz
+figure;
+freqz(b_iir, a_iir, 1024, sampleRate);
+title('Frequency Response of IIR Filter');
+
+% Apply IIR filter to the audio signal
+audioData_iir = filter(b_iir, a_iir, audioData);
+
+% Plot the filtered audio signal (IIR)
+figure;
+plot(t, audioData_iir);
+xlabel('Time (seconds)');
+ylabel('Amplitude');
+title('Waveform of IIR Filtered audio09.wav');
+grid on;
+
+% Compute the FFT of the IIR filtered audio signal
+Y_iir = fft(audioData_iir);
+
+% Normalize the FFT output
+Y_iir = Y_iir / length(audioData_iir);
+
+% Get the magnitude of the FFT
+Y_iir_magnitude = abs(Y_iir);
+
+% Use fftshift to center the FFT spectrum
+Y_iir_magnitude_shifted = fftshift(Y_iir_magnitude);
+
+% Create a frequency vector
+f = linspace(-sampleRate/2, sampleRate/2, length(Y_iir_magnitude));
+
+% Plot the frequency spectrum of the IIR filtered audio signal
+figure;
+plot(f, Y_iir_magnitude_shifted);
+xlabel('Frequency (Hz)');
+ylabel('Magnitude');
+title('Frequency Spectrum of IIR Filtered audio09.wav (Shifted)');
+%xlim([0 500]); % Zoom in on the frequency range from 0Hz to 500Hz
+grid on;
+
+%% Play the edited audio after fir and iir are applied
+% Apply IIR filter to the audio signal
+audioData_iir = filter(b_iir, a_iir, audioData);
+
+% Play the IIR filtered audio signal
+%sound(audioData_iir, sampleRate);
+
+% Apply FIR filter to the audio signal
+audioData_fir = filter(b_fir, 1, audioData);
+
+% Play the FIR filtered audio signal
+%sound(audioData_fir, sampleRate);
+
+%% Verify whether the corrupted signal has been removed compared to IIR and FIR
+% Compute SNR of the original signal (SNR = signal-noise ratio)
+snr_original = snr(audioData);
+
+% Compute SNR of the FIR filtered signal
+snr_fir = snr(audioData_fir);
+
+% Compute SNR of the IIR filtered signal
+snr_iir = snr(audioData_iir);
+
+% Display SNR values
+fprintf('SNR of original signal: %.2f dB\n', snr_original);
+fprintf('SNR of FIR filtered signal: %.2f dB\n', snr_fir);
+fprintf('SNR of IIR filtered signal: %.2f dB\n', snr_iir);
+
+%Use spectrogram to differentiate the signals plots
+% Original audio spectrogram
+%First [] is the window length, second [] is the parameter of fft point
+figure;
+spectrogram(audioData, 256, [], [], sampleRate, 'yaxis');
+title('Spectrogram of Original Audio');
+
+% FIR filtered audio spectrogram
+figure;
+spectrogram(audioData_fir, 256, [], [], sampleRate, 'yaxis');
+title('Spectrogram of FIR Filtered Audio');
+
+% IIR filtered audio spectrogram
+figure;
+spectrogram(audioData_iir, 256, [], [], sampleRate, 'yaxis');
+title('Spectrogram of IIR Filtered Audio');
+
+%% Save the edited audio
+%From fir design
+audiowrite('audio09_FIR.wav', audioData_fir, sampleRate);
+
+%From iir design
+audiowrite('audio09_IIR.wav', audioData_iir, sampleRate);
